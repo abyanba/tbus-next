@@ -1,0 +1,21 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        Int      @id @default(autoincrement()) // Primary key, auto increment
+  email     String   @unique                      // Email harus unik
+  username  String   @unique                      // Username harus unik
+  password  String                                // Password disimpan sebagai string hash
+  role      String                                // Gantikan enum dengan string
+  createdAt DateTime @default(now())              // Timestamp untuk pembuatan
+  updatedAt DateTime @updatedAt                   // Timestamp otomatis diperbarui saat ada perubahan
+}

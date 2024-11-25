@@ -1,9 +1,30 @@
-import Image from "next/image";
-import { Button } from "@/components/ui/button"
-import { Mail, Loader2 } from "lucide-react"
+"use client";
 
+import React from "react";
+import { useSession } from "next-auth/react";
+import Image from "next/image";
+import { Button } from "@/components/ui/button";
+import { Mail, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  // Saat sesi sedang loading, tampilkan placeholder atau spinner
+  if (status === "loading") {
+    return <div>Loading...</div>;
+  }
+
+  // Jika user tidak login, tampilkan tombol default
+  const buttonText = session?.user?.role
+    ? `Role: ${session.user.role}` // Jika login, tampilkan role
+    : "Not Logged In"; // Jika tidak login
+
+  const handleLoginRedirect = () => {
+    router.push("/login"); // Arahkan ke halaman login
+  };
+
   return (
     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
       <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
@@ -50,8 +71,10 @@ export default function Home() {
           >
             Read our docs
           </a>
-          <Button>
-            <Mail/>button<Loader2 className="animate-spin"/>
+          <Button onClick={handleLoginRedirect}>
+            <Mail />
+            {buttonText}
+            <Loader2 className="animate-spin" />
           </Button>
         </div>
       </main>

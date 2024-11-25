@@ -1,4 +1,7 @@
 import Image from "next/image";
+import { Button } from "@/components/ui/button"
+import { Mail, Loader2 } from "lucide-react"
+
 
 export default function Home() {
   return (
@@ -47,6 +50,9 @@ export default function Home() {
           >
             Read our docs
           </a>
+          <Button>
+            <Mail/>button<Loader2 className="animate-spin"/>
+          </Button>
         </div>
       </main>
       <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">

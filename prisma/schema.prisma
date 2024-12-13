@@ -1,0 +1,115 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id       Int     @id @default(autoincrement())
+  nama     String
+  email    String  @unique
+  telepon  String
+  role     Role    @default(USER)
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+model Terminal {
+  id                  Int    @id @default(autoincrement())
+  nama                String
+  kecamatan           String
+  kota                String
+  provinsi            String
+  keberangkatanRute   Rute[]  @relation("TerminalKeberangkatan")
+  tujuanRute          Rute[]  @relation("TerminalTujuan")
+}
+
+model Fasilitas {
+  id     Int      @id @default(autoincrement())
+  nama   String
+  buses  Bus[]    @relation("BusFasilitas")
+}
+
+model Bus {
+  id           Int         @id @default(autoincrement())
+  nama         String
+  email        String      @unique
+  telepon      Int
+  tipe         String
+  total_seat   Int
+  fasilitas    Fasilitas[] @relation("BusFasilitas")
+  jadwals      Jadwal[] 
+  seats        Seat[] 
+}
+
+model Jadwal {
+  id                     Int           @id @default(autoincrement())
+  waktu_keberangkatan    DateTime
+  waktu_tiba             DateTime
+  harga                  Int
+  nama_bus               Bus           @relation(fields: [namaBusId], references: [id])
+  namaBusId              Int
+  rute                   Rute          @relation(fields: [ruteId], references: [id])
+  ruteId                 Int
+  seats                  JadwalSeat[] 
+  pemesanans             Pemesanan[]
+}
+
+model Rute {
+  id                      Int           @id @default(autoincrement())
+  terminal_keberangkatan  Terminal      @relation("TerminalKeberangkatan", fields: [terminalKeberangkatanId], references: [id])
+  terminalKeberangkatanId Int
+  terminal_tujuan         Terminal      @relation("TerminalTujuan", fields: [terminalTujuanId], references: [id])
+  terminalTujuanId        Int
+  jadwals                 Jadwal[]
+}
+
+model Seat {
+  id          Int     @id @default(autoincrement())
+  nomor_kursi String
+  bus         Bus     @relation(fields: [busId], references: [id])
+  busId       Int
+  jadwals     JadwalSeat[]   
+}
+
+model JadwalSeat {
+  id          Int         @id @default(autoincrement())
+  status      Boolean     @default(false)
+  jadwalId    Int
+  seatId      Int
+  jadwal      Jadwal      @relation(fields: [jadwalId], references: [id])
+  seat        Seat        @relation(fields: [seatId], references: [id])
+  nomor_kursi String
+  pemesanans  Pemesanan?
+}
+
+model Pemesanan {
+  id            Int           @id @default(autoincrement())
+  nama          String
+  jadwal        Jadwal        @relation(fields: [jadwalId], references: [id])
+  jadwalId      Int
+  jadwalSeat    JadwalSeat?   @relation(fields: [jadwalSeatId], references: [id])
+  jadwalSeatId  Int?          @unique
+  status        Boolean       @default(false)
+  pembayaran    Pembayaran    @relation(fields: [pembayaranId], references: [id])
+  pembayaranId  Int
+}
+
+model Pembayaran {
+  id            Int             @id @default(autoincrement())
+  metode        String
+  status        Boolean        @default(false)
+  pemesanans    Pemesanan[]
+}

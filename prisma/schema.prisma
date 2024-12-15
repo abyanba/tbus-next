@@ -56,8 +56,8 @@ model Bus {
 
 model Jadwal {
   id                     Int           @id @default(autoincrement())
-  waktu_keberangkatan    DateTime
-  waktu_tiba             DateTime
+  waktu_keberangkatan    DateTime    
+  waktu_tiba             DateTime  
   harga                  Int
   nama_bus               Bus           @relation(fields: [namaBusId], references: [id])
   namaBusId              Int
@@ -81,7 +81,7 @@ model Seat {
   nomor_kursi String
   bus         Bus     @relation(fields: [busId], references: [id])
   busId       Int
-  jadwals     JadwalSeat[]   
+  jadwals     JadwalSeat[]
 }
 
 model JadwalSeat {
@@ -91,8 +91,8 @@ model JadwalSeat {
   seatId      Int
   jadwal      Jadwal      @relation(fields: [jadwalId], references: [id])
   seat        Seat        @relation(fields: [seatId], references: [id])
-  nomor_kursi String
   pemesanans  Pemesanan?
+  @@unique([jadwalId, seatId])
 }
 
 model Pemesanan {

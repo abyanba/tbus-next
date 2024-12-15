@@ -32,12 +32,6 @@ const CreateForm = () => {
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
-      
-        // Debug payload
-        console.log("Payload sebelum submit:", Object.fromEntries(formData.entries()));
-
-        console.log("Semua fasilitasIds:", formData.getAll("fasilitasIds"));console.log("Semua fasilitasIds:", formData.getAll("fasilitasIds"));
-      
         await formAction(formData);
     };
       

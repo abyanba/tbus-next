@@ -29,8 +29,7 @@ const UpdateForm = ({ bus }: { bus: Bus & { fasilitas: Fasilitas[] } }) => {
     };
 
     fetchFasilitas();
-
-    // Set default fasilitas from bus
+    
     setSelectedFasilitas(
       bus.fasilitas.map((f) => ({
         value: f.id,

@@ -1,5 +1,5 @@
 import Link from "next/link";  // Pastikan menggunakan Link dari next
-import { FaHome, FaCalendarAlt, FaBus, FaMapMarkerAlt, FaUserAlt, FaWarehouse } from "react-icons/fa";
+import { FaHome, FaCalendarAlt, FaBus, FaMapMarkerAlt, FaUserAlt, FaWarehouse, FaMapMarkedAlt } from "react-icons/fa";
 
 const Navbar = () => {
   return (
@@ -34,6 +34,12 @@ const Navbar = () => {
             <span className="text-white hover:bg-blue-700 px-3 py-2 rounded-md flex items-center space-x-2">
               <FaMapMarkerAlt className="text-xl" />
               <span>Terminal</span>
+            </span>
+          </Link>
+          <Link href="/rute">
+            <span className="text-white hover:bg-blue-700 px-3 py-2 rounded-md flex items-center space-x-2">
+              <FaMapMarkedAlt className="text-xl" />
+              <span>Rute Perjalanan</span>
             </span>
           </Link>
           <Link href="/bus">

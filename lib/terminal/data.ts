@@ -3,7 +3,18 @@ import { prisma } from "@/lib/prisma";
 export const getTerminals = async () => {
   try {
     const terminals = await prisma.terminal.findMany({
-      include: { keberangkatanJadwal: true, tujuanJadwal: true },
+      include: {
+        keberangkatanRute: {
+          include: {
+            jadwals: true, // Include associated jadwal for keberangkatan
+          },
+        },
+        tujuanRute: {
+          include: {
+            jadwals: true, // Include associated jadwal for tujuan
+          },
+        },
+      },
     });
     return terminals;
   } catch (error) {
@@ -16,7 +27,18 @@ export const getTerminalById = async (id: string) => {
   try {
     const terminal = await prisma.terminal.findUnique({
       where: { id: parseInt(id) },
-      include: { keberangkatanJadwal: true, tujuanJadwal: true },
+      include: {
+        keberangkatanRute: {
+          include: {
+            jadwals: true, // Include associated jadwal for keberangkatan
+          },
+        },
+        tujuanRute: {
+          include: {
+            jadwals: true, // Include associated jadwal for tujuan
+          },
+        },
+      },
     });
     return terminal;
   } catch (error) {

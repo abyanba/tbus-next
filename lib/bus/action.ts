@@ -15,96 +15,140 @@ const BusSchema = z.object({
 });
 
 export const saveBus = async (prevState: any, formData: FormData) => {
-    const rawData = Object.fromEntries(formData.entries());
-  
-    const fasilitasIds = formData.getAll("fasilitasIds").map((id) => parseInt(id as string, 10));
-  
-    const data = {
-      ...rawData,
-      total_seat: parseInt(rawData.total_seat as string, 10), // Konversi total_seat ke number
-      telepon: rawData.telepon as string,
-      fasilitasIds, // Gunakan array fasilitasIds yang sudah diproses
+  const rawData = Object.fromEntries(formData.entries());
+
+  const fasilitasIds = formData.getAll("fasilitasIds").map((id) => parseInt(id as string, 10));
+
+  const data = {
+    ...rawData,
+    total_seat: parseInt(rawData.total_seat as string, 10), // Konversi total_seat ke number
+    telepon: rawData.telepon as string,
+    fasilitasIds, // Gunakan array fasilitasIds yang sudah diproses
+  };
+
+  const validatedFields = BusSchema.safeParse(data);
+
+  if (!validatedFields.success) {
+    console.error("Validasi gagal:", validatedFields.error.flatten().fieldErrors);
+    return {
+      Error: validatedFields.error.flatten().fieldErrors,
     };
-  
-    const validatedFields = BusSchema.safeParse(data);
-  
-    if (!validatedFields.success) {
-      console.error("Validasi gagal:", validatedFields.error.flatten().fieldErrors);
-      return {
-        Error: validatedFields.error.flatten().fieldErrors,
-      };
-    }
-  
-    try {
-      const telepon = parseInt(validatedFields.data.telepon, 10);
-  
-      await prisma.bus.create({
-        data: {
-          nama: validatedFields.data.name,
-          email: validatedFields.data.email,
-          telepon: telepon,
-          tipe: validatedFields.data.tipe,
-          total_seat: validatedFields.data.total_seat,
-          fasilitas: {
-            connect: (validatedFields.data.fasilitasIds ?? []).map((id) => ({ id })), // Gunakan array kosong jika undefined
-          },
+  }
+
+  try {
+    const telepon = parseInt(validatedFields.data.telepon, 10);
+
+    // Buat bus baru
+    const bus = await prisma.bus.create({
+      data: {
+        nama: validatedFields.data.name,
+        email: validatedFields.data.email,
+        telepon: telepon,
+        tipe: validatedFields.data.tipe,
+        total_seat: validatedFields.data.total_seat,
+        fasilitas: {
+          connect: (validatedFields.data.fasilitasIds ?? []).map((id) => ({ id })), // Gunakan array kosong jika undefined
         },
+      },
+    });
+
+    const seatsData = [];
+    for (let i = 1; i <= validatedFields.data.total_seat; i++) {
+      seatsData.push({
+        nomor_kursi: i.toString(), // Nomor kursi dalam format "1", "2", ...
+        busId: bus.id,
       });
-    } catch (error) {
-      console.error("Error saat menyimpan data ke database:", error);
-      return { message: "Failed to create bus" };
     }
-    revalidatePath("/bus");
-    redirect("/bus");
+
+    // Menambahkan kursi ke bus yang baru dibuat
+    await prisma.seat.createMany({
+      data: seatsData,
+    });
+
+  } catch (error) {
+    console.error("Error saat menyimpan data ke database:", error);
+    return { message: "Failed to create bus" };
+  }
+
+  revalidatePath("/bus");
+  redirect("/bus");
 };
      
 
 export const updateBus = async (id: string, prevState: any, formData: FormData) => {
-    const rawData = Object.fromEntries(formData.entries());
-  
-    // Ambil fasilitasIds dari formData dan pastikan berbentuk array of numbers
-    const fasilitasIds = formData.getAll("fasilitasIds").map((id) => parseInt(id as string, 10));
-  
-    // Preprocessing data untuk validasi
-    const data = {
-      ...rawData,
-      total_seat: parseInt(rawData.total_seat as string, 10), 
-      telepon: rawData.telepon as string,
-      fasilitasIds, 
+  const rawData = Object.fromEntries(formData.entries());
+
+  const fasilitasIds = formData.getAll("fasilitasIds").map((id) => parseInt(id as string, 10));
+
+  const data = {
+    ...rawData,
+    total_seat: parseInt(rawData.total_seat as string, 10),
+    telepon: rawData.telepon as string,
+    fasilitasIds,
+  };
+
+  const validatedFields = BusSchema.safeParse(data);
+  if (!validatedFields.success) {
+    console.error("Validation errors:", validatedFields.error.flatten().fieldErrors);
+    return {
+      Error: validatedFields.error.flatten().fieldErrors,
     };
-  
-    const validatedFields = BusSchema.safeParse(data);
-    if (!validatedFields.success) {
-      console.error("Validation errors:", validatedFields.error.flatten().fieldErrors);
-      return {
-        Error: validatedFields.error.flatten().fieldErrors,
-      };
-    }
-  
-    try {
-      // Update data bus ke database menggunakan Prisma
-      await prisma.bus.update({
-        where: { id: parseInt(id) },
-        data: {
-          nama: validatedFields.data.name,
-          email: validatedFields.data.email,
-          telepon: parseInt(validatedFields.data.telepon),
-          tipe: validatedFields.data.tipe,
-          total_seat: validatedFields.data.total_seat,
-          fasilitas: {
-            set: validatedFields.data.fasilitasIds?.map((id) => ({ id })) || [], // Hapus relasi lama dan tambahkan relasi baru
-          },
+  }
+
+  try {
+    // Update bus
+    const bus = await prisma.bus.update({
+      where: { id: parseInt(id) },
+      data: {
+        nama: validatedFields.data.name,
+        email: validatedFields.data.email,
+        telepon: parseInt(validatedFields.data.telepon),
+        tipe: validatedFields.data.tipe,
+        total_seat: validatedFields.data.total_seat,
+        fasilitas: {
+          set: validatedFields.data.fasilitasIds?.map((id) => ({ id })) || [],
+        },
+      },
+    });
+
+    // Check if total_seat has changed
+    const currentSeats = await prisma.seat.findMany({
+      where: { busId: bus.id },
+    });
+
+    const currentSeatCount = currentSeats.length;
+
+    if (validatedFields.data.total_seat > currentSeatCount) {
+      // If total_seat increased, add new seats
+      const seatsToAdd = [];
+      for (let i = currentSeatCount + 1; i <= validatedFields.data.total_seat; i++) {
+        seatsToAdd.push({
+          nomor_kursi: i.toString(),
+          busId: bus.id,
+        });
+      }
+
+      await prisma.seat.createMany({
+        data: seatsToAdd,
+      });
+    } else if (validatedFields.data.total_seat < currentSeatCount) {
+      // If total_seat decreased, remove extra seats
+      const seatsToRemove = currentSeats.slice(validatedFields.data.total_seat);
+      await prisma.seat.deleteMany({
+        where: {
+          id: { in: seatsToRemove.map((seat) => seat.id) },
         },
       });
-  
-    } catch (error) {
-      console.error("Error updating bus:", error);
-      return { message: "Failed to update bus" };
     }
-  
-    revalidatePath("/bus");
-    redirect("/bus");
-};  
+
+  } catch (error) {
+    console.error("Error updating bus:", error);
+    return { message: "Failed to update bus" };
+  }
+
+  revalidatePath("/bus");
+  redirect("/bus");
+}; 
 
 export const deleteBus = async (id: string) => {
     try {
